@@ -1,0 +1,531 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#2c6848"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><link rel="icon" href="icon-192.png"><style>:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>찻집 재고장</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@700&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow phone column. Sticky title bar, scrolling list, fixed three-tab bar; editing happens in bottom sheets. */
+:root {
+  --bg: #eaefe6;
+  --surface: #f8faf5;
+  --ink: #1d2820;
+  --muted: #5c695f;
+  --line: #d3dacd;
+  --accent: #2c6848;
+  --accent-ink: #ffffff;
+  --warn: #a84c14;
+  --warn-bg: #f5e2d1;
+  --shade: rgba(20, 30, 24, .45);
+  --display: "Gowun Batang", "Apple SD Gothic Neo", "Malgun Gothic", serif;
+  --body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131915; --surface: #1b231e; --ink: #e5ebe2; --muted: #98a59b; --line: #2d3931;
+    --accent: #7fc49a; --accent-ink: #0f2218; --warn: #f0a46c; --warn-bg: #3a2a1c;
+    --shade: rgba(0, 0, 0, .6); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131915; --surface: #1b231e; --ink: #e5ebe2; --muted: #98a59b; --line: #2d3931;
+  --accent: #7fc49a; --accent-ink: #0f2218; --warn: #f0a46c; --warn-bg: #3a2a1c;
+  --shade: rgba(0, 0, 0, .6); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.5; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gutter { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.col { max-width: 520px; margin-inline: auto; }
+
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.top .col { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+.top h1 { font-family: var(--display); font-size: 22px; margin: 0; letter-spacing: -.01em; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 10px 14px; min-height: 44px; font-weight: 500; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn.danger { color: var(--warn); border-color: var(--warn); }
+.btn.wide { width: 100%; }
+
+main .col { padding-block: 14px 110px; display: flex; flex-direction: column; gap: 14px; }
+.tools { display: flex; flex-direction: column; gap: 10px; }
+input[type="search"], input[type="text"], input[type="number"], select, textarea {
+  width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+}
+textarea { min-height: 76px; resize: vertical; }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.chip { flex: none; border: 1px solid var(--line); background: transparent; border-radius: 999px; padding: 6px 13px; min-height: 36px; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.chip.lowchip[aria-pressed="true"] { background: var(--warn); border-color: var(--warn); color: var(--bg); }
+.count { font-size: 14px; color: var(--muted); margin: 0; }
+.count b { color: var(--ink); font-weight: 600; }
+.note { margin: 0; font-size: 14px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
+
+.group h2 { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .04em; margin: 0 0 6px; display: flex; justify-content: space-between; }
+.group ul { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.row { display: flex; align-items: stretch; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.row-main { flex: 1; min-width: 0; text-align: left; background: none; border: 0; padding: 11px 12px; display: flex; flex-direction: column; gap: 1px; }
+.nm { font-weight: 500; overflow-wrap: anywhere; }
+.sub { font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.badge { background: var(--warn-bg); color: var(--warn); font-weight: 600; font-size: 12px; border-radius: 4px; padding: 1px 6px; }
+.qty { flex: none; min-width: 96px; background: none; border: 0; border-left: 1px solid var(--line); padding: 8px 12px; text-align: right; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; justify-content: flex-end; gap: 4px; }
+.qty b { font-size: 20px; font-weight: 600; }
+.qty i { font-style: normal; font-size: 13px; color: var(--muted); min-width: 1.1em; text-align: left; }
+.row.low .qty b { color: var(--warn); }
+.empty { text-align: center; color: var(--muted); padding: 36px 8px; margin: 0; }
+
+.tabs { position: fixed; inset: auto 0 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.tabs .col { display: flex; }
+.tabs button { flex: 1; background: none; border: 0; border-top: 3px solid transparent; padding: 12px 4px 13px; min-height: 52px; color: var(--muted); font-weight: 500; }
+.tabs button[aria-current="page"] { color: var(--accent); border-top-color: var(--accent); font-weight: 600; }
+
+.sheet { position: fixed; inset: 0; z-index: 20; background: var(--shade); display: flex; align-items: flex-end; justify-content: center; }
+.panel { width: 100%; max-width: 520px; max-height: 92%; overflow-y: auto; background: var(--bg); border-radius: 14px 14px 0 0; padding-block: 16px calc(18px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 14px; }
+.panel-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.panel-head h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; min-width: 0; }
+.x { border: 0; background: none; min-width: 44px; min-height: 44px; font-size: 15px; color: var(--muted); }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field > span, legend { font-size: 13px; color: var(--muted); font-weight: 500; padding: 0; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg label { flex: 1; text-align: center; padding: 10px 6px; min-height: 44px; border-left: 1px solid var(--line); }
+.seg label:first-child { border-left: 0; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label:has(input:checked) { background: var(--ink); color: var(--bg); font-weight: 600; }
+.seg label:has(input:disabled) { opacity: .55; }
+.seg label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.err { color: var(--warn); font-size: 14px; margin: 0; font-weight: 500; }
+.hint { color: var(--muted); font-size: 13px; margin: 0; }
+.acts { display: flex; gap: 10px; }
+.acts .btn { flex: 1; }
+.big { font-size: 40px !important; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; min-height: 76px !important; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.steps.two { grid-template-columns: repeat(2, 1fr); }
+.steps .btn { padding-inline: 4px; font-variant-numeric: tabular-nums; }
+.log { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+.log li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.log li span:first-child { color: var(--muted); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card h2 { margin: 0; font-size: 16px; }
+.card p { margin: 0; }
+.audit-name { font-family: var(--display); font-size: 26px; line-height: 1.25; margin: 0; overflow-wrap: anywhere; }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar div { height: 100%; background: var(--accent); }
+.manage { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.manage li, .addrow { display: flex; gap: 8px; }
+.manage input, .addrow input { flex: 1; min-width: 0; }
+.filebtn { display: flex; align-items: center; justify-content: center; text-align: center; }
+.filebtn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(72px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: calc(100% - 32px); text-align: center; }
+</style>
+
+</head><body>
+<header class="top"><div class="col gutter">
+  <h1>찻집 재고장</h1>
+  <button class="btn primary" id="add-tea" data-act="new">차 추가</button>
+</div></header>
+
+<main><div class="col gutter" id="view"></div></main>
+
+<nav class="tabs" aria-label="화면 이동"><div class="col gutter">
+  <button id="tab-list" data-act="tab" data-tab="list">재고</button>
+  <button id="tab-audit" data-act="tab" data-tab="audit">실사</button>
+  <button id="tab-set" data-act="tab" data-tab="set">설정</button>
+</div></nav>
+
+<div class="sheet" id="sheet" hidden><div class="panel gutter" id="panel" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function () {
+  var KEY = 'tea-stock-v1';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var uid = function () { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); };
+  var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+  var day = function (t) { var d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  var stamp = function (t) { var d = new Date(t); return day(t) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+
+  function sample() {
+    var now = Date.now(), n = 0;
+    var mk = function (name, cat, qty, unit, min, loc, memo) {
+      return { id: 's' + (++n), name: name, cat: cat, qty: qty, unit: unit, min: min, loc: loc, memo: memo || '', updated: now };
+    };
+    return {
+      sample: false,
+      v: 2,
+      cats: ['보이차', '우롱차', '홍차'],
+      locs: [],
+      teas: [],
+      log: []
+    };
+  }
+  function valid(o) { return o && Array.isArray(o.teas) && Array.isArray(o.cats) && Array.isArray(o.locs) && Array.isArray(o.log); }
+  function load() {
+    try { var r = localStorage.getItem(KEY); if (r) { var o = JSON.parse(r); if (valid(o)) {
+      if (o.sample) {
+        var ex = function (x) { return /^s\d+$/.test(x.id); };
+        o.teas = o.teas.filter(function (t) { return !ex(t); });
+        o.log = o.log.filter(function (l) { return !ex(l); });
+        o.sample = false;
+        try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e2) {}
+      }
+      if (!o.v || o.v < 2) {
+        var drop = ['녹차', '백차', '허브차'];
+        o.cats = o.cats.filter(function (c) { return drop.indexOf(c) < 0 || o.teas.some(function (t) { return t.cat === c; }); });
+        o.locs = []; o.teas.forEach(function (t) { t.loc = ''; }); o.v = 2;
+        try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e3) {}
+      }
+      return o;
+    } } } catch (e) {}
+    return sample();
+  }
+  function persist() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var S = load();
+  var ui = { tab: 'list', q: '', cat: '', lowOnly: false, audit: null, pending: null };
+
+  var isLow = function (t) { return t.min != null && t.qty < t.min; };
+  var findTea = function (id) { return S.teas.filter(function (t) { return t.id === id; })[0]; };
+  function parseQty(v) { v = String(v).trim(); return /^\d+$/.test(v) ? Number(v) : null; }
+  function setQty(tea, to, reason) {
+    if (to === tea.qty) return false;
+    S.log.unshift({ t: Date.now(), id: tea.id, name: tea.name, unit: tea.unit, from: tea.qty, to: to, reason: reason });
+    if (S.log.length > 3000) S.log.length = 3000;
+    tea.qty = to; tea.updated = Date.now(); persist(); return true;
+  }
+
+  var toastTimer;
+  function toast(msg) { var el = $('toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(function () { el.hidden = true; }, 2600); }
+
+  /* ---------- 재고 목록 ---------- */
+  function viewList() {
+    return '<div class="tools"><input id="q" type="search" placeholder="차 이름 검색" autocomplete="off" value="' + esc(ui.q) + '">' +
+      '<div class="chips" id="chips"></div></div>' +
+      '<p class="count" id="count"></p>' +
+      (S.sample ? '<p class="note">예시 데이터가 들어 있습니다. 설정에서 모두 지우고 시작할 수 있습니다.</p>' : '') +
+      '<div id="list" style="display:flex;flex-direction:column;gap:14px"></div>';
+  }
+  function renderChips() {
+    var lows = S.teas.filter(isLow).length;
+    var h = '<button class="chip" data-act="cat" data-cat="" aria-pressed="' + (ui.cat === '') + '">전체</button>';
+    S.cats.forEach(function (c) { h += '<button class="chip" data-act="cat" data-cat="' + esc(c) + '" aria-pressed="' + (ui.cat === c) + '">' + esc(c) + '</button>'; });
+    h += '<button class="chip lowchip" data-act="low" aria-pressed="' + ui.lowOnly + '">부족만 ' + lows + '</button>';
+    $('chips').innerHTML = h;
+    $('count').innerHTML = '전체 <b>' + S.teas.length + '</b>종 · 부족 <b>' + lows + '</b>종';
+  }
+  function renderList() {
+    var q = ui.q.trim().toLowerCase();
+    var teas = S.teas.filter(function (t) {
+      return (!q || t.name.toLowerCase().indexOf(q) >= 0) && (!ui.cat || t.cat === ui.cat) && (!ui.lowOnly || isLow(t));
+    });
+    var el = $('list');
+    if (!teas.length) {
+      el.innerHTML = '<p class="empty">' + (S.teas.length ? '조건에 맞는 차가 없습니다.' : '아직 등록한 차가 없습니다.<br>오른쪽 위 “차 추가”로 첫 차를 등록하세요.') + '</p>';
+      return;
+    }
+    var groups = S.cats.slice();
+    teas.forEach(function (t) { if (groups.indexOf(t.cat) < 0) groups.push(t.cat); });
+    var h = '';
+    groups.forEach(function (c) {
+      var rows = teas.filter(function (t) { return t.cat === c; }).sort(function (a, b) { return a.name.localeCompare(b.name, 'ko'); });
+      if (!rows.length) return;
+      h += '<section class="group"><h2><span>' + esc(c || '분류 없음') + '</span><span>' + rows.length + '종</span></h2><ul>';
+      rows.forEach(function (t) {
+        var low = isLow(t);
+        h += '<li class="row' + (low ? ' low' : '') + '">' +
+          '<button class="row-main" data-act="edit" data-id="' + t.id + '"><span class="nm">' + esc(t.name) + '</span>' +
+          '<span class="sub">' + (low ? '<span class="badge">부족 · 최소 ' + t.min + t.unit + '</span>' : '') + '</span></button>' +
+          '<button class="qty" data-act="adj" data-id="' + t.id + '" aria-label="' + esc(t.name) + ' 수량 고치기"><b>' + t.qty + '</b><i>' + t.unit + '</i></button></li>';
+      });
+      h += '</ul></section>';
+    });
+    el.innerHTML = h;
+  }
+
+  /* ---------- 시트 ---------- */
+  function openSheet(html) { $('panel').innerHTML = html; $('sheet').hidden = false; }
+  function closeSheet() { $('sheet').hidden = true; $('panel').innerHTML = ''; }
+  var head = function (title) { return '<div class="panel-head"><h2>' + esc(title) + '</h2><button class="x" data-act="close">닫기</button></div>'; };
+
+  function sheetAdjust(t) {
+    var steps = t.unit === 'g' ? [-50, -10, 10, 50] : [-1, 1];
+    var h = head(t.name) +
+      '<p class="hint">지금 기록: ' + t.qty + t.unit + (t.min != null ? ' · 최소 ' + t.min + t.unit : '') + '</p>' +
+      '<label class="field"><span>새 수량 (' + t.unit + ')</span><input class="big" id="adj-qty" type="number" inputmode="numeric" min="0" step="1" value="' + t.qty + '"></label>' +
+      '<div class="steps' + (steps.length === 2 ? ' two' : '') + '">' + steps.map(function (s) { return '<button class="btn" data-act="step" data-step="' + s + '">' + (s > 0 ? '+' : '−') + Math.abs(s) + '</button>'; }).join('') + '</div>' +
+      '<fieldset><legend>사유</legend><div class="seg">' +
+      ['사용', '입고', '실사 정정'].map(function (r, i) { return '<label><input type="radio" name="adj-reason" id="adj-r' + i + '" value="' + r + '">' + r + '</label>'; }).join('') +
+      '</div></fieldset><p class="hint">사유를 고르지 않으면 줄었을 때 사용, 늘었을 때 입고로 기록합니다.</p>' +
+      '<p class="err" id="adj-err" hidden></p>' +
+      '<div class="acts"><button class="btn primary" data-act="adj-save" data-id="' + t.id + '">저장</button></div>';
+    openSheet(h);
+  }
+
+  function sheetEdit(t) {
+    var isNew = !t;
+    t = t || { name: '', cat: ui.cat || S.cats[0] || '', qty: '', unit: 'g', min: null, loc: '', memo: '' };
+    var opts = function (list, cur, none) {
+      var all = list.slice(); if (cur && all.indexOf(cur) < 0) all.push(cur);
+      return (none ? '<option value="">' + none + '</option>' : '') + all.map(function (c) { return '<option' + (c === cur ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('');
+    };
+    var h = head(isNew ? '차 추가' : '차 정보') +
+      '<label class="field"><span>이름</span><input id="f-name" type="text" maxlength="60" autocomplete="off" value="' + esc(t.name) + '"></label>' +
+      '<label class="field"><span>분류</span><select id="f-cat">' + opts(S.cats, t.cat) + '</select></label>' +
+      '<fieldset><legend>단위' + (isNew ? '' : ' (등록 후에는 바꿀 수 없습니다)') + '</legend><div class="seg">' +
+      ['g', '편'].map(function (u, i) { return '<label><input type="radio" name="f-unit" id="f-unit' + i + '" value="' + u + '"' + (t.unit === u ? ' checked' : '') + (isNew ? '' : ' disabled') + '>' + u + '</label>'; }).join('') + '</div></fieldset>' +
+      '<div class="pair"><label class="field"><span>현재 수량</span><input id="f-qty" type="number" inputmode="numeric" min="0" step="1" value="' + t.qty + '"></label>' +
+      '<label class="field"><span>최소 수량 (선택)</span><input id="f-min" type="number" inputmode="numeric" min="0" step="1" value="' + (t.min == null ? '' : t.min) + '"></label></div>' +
+      '<label class="field"><span>메모 (선택)</span><textarea id="f-memo" maxlength="300" placeholder="구입처, 개봉일, 유통기한 등">' + esc(t.memo) + '</textarea></label>' +
+      '<p class="err" id="f-err" hidden></p>' +
+      '<div class="acts"><button class="btn primary" data-act="save" data-id="' + (isNew ? '' : t.id) + '">' + (isNew ? '등록' : '저장') + '</button></div>';
+    if (!isNew) {
+      var logs = S.log.filter(function (l) { return l.id === t.id; }).slice(0, 20);
+      h += '<div class="field"><span>변경 이력</span>' + (logs.length ? '<ul class="log">' + logs.map(function (l) {
+        return '<li><span>' + stamp(l.t) + ' · ' + esc(l.reason) + '</span><span>' + l.from + ' → ' + l.to + l.unit + '</span></li>';
+      }).join('') + '</ul>' : '<p class="hint">아직 수량을 바꾼 기록이 없습니다.</p>') + '</div>' +
+        '<div id="del-ask"><button class="btn danger wide" data-act="del-ask">이 차 삭제</button></div>' +
+        '<div id="del-sure" hidden><p class="err">삭제하면 되돌릴 수 없습니다.</p><div class="acts"><button class="btn danger" data-act="del" data-id="' + t.id + '">삭제</button><button class="btn" data-act="del-no">취소</button></div></div>';
+    }
+    openSheet(h);
+  }
+
+  function saveTea(id) {
+    var err = function (m) { var e = $('f-err'); e.textContent = m; e.hidden = false; };
+    var name = $('f-name').value.trim();
+    if (!name) return err('이름을 입력하세요.');
+    var dup = S.teas.some(function (t) { return t.id !== id && t.name.toLowerCase() === name.toLowerCase(); });
+    if (dup) return err('같은 이름의 차가 이미 있습니다.');
+    var qty = parseQty($('f-qty').value);
+    if (qty == null) return err('현재 수량은 0 이상의 정수로 입력하세요.');
+    var minRaw = $('f-min').value.trim(), min = minRaw === '' ? null : parseQty(minRaw);
+    if (minRaw !== '' && min == null) return err('최소 수량은 0 이상의 정수로 입력하세요.');
+    var unitEl = document.querySelector('input[name="f-unit"]:checked');
+    var cat = $('f-cat').value, loc = '', memo = $('f-memo').value.trim();
+    if (id) {
+      var t = findTea(id); if (!t) return closeSheet();
+      t.name = name; t.cat = cat; t.loc = loc; t.min = min; t.memo = memo;
+      if (!setQty(t, qty, '실사 정정')) { t.updated = Date.now(); persist(); }
+      toast('저장했습니다');
+    } else {
+      var nt = { id: uid(), name: name, cat: cat, qty: 0, unit: unitEl ? unitEl.value : 'g', min: min, loc: loc, memo: memo, updated: Date.now() };
+      S.teas.push(nt);
+      if (!setQty(nt, qty, '등록')) persist();
+      toast(name + ' 등록했습니다');
+    }
+    closeSheet(); render();
+  }
+
+  /* ---------- 실사 ---------- */
+  function auditOrder() {
+    var li = function (t) { var i = S.locs.indexOf(t.loc); return i < 0 ? 999 : i; };
+    var ci = function (t) { var i = S.cats.indexOf(t.cat); return i < 0 ? 999 : i; };
+    return S.teas.slice().sort(function (a, b) { return li(a) - li(b) || ci(a) - ci(b) || a.name.localeCompare(b.name, 'ko'); }).map(function (t) { return t.id; });
+  }
+  function viewAudit() {
+    var a = ui.audit;
+    if (!a) {
+      if (!S.teas.length) return '<p class="empty">등록한 차가 없어 실사할 항목이 없습니다.</p>';
+      return '<div class="card"><h2>실사 모드</h2><p>차 ' + S.teas.length + '종을 분류 순서로 하나씩 넘기며 수량만 입력합니다.</p>' +
+        '<p class="hint">언제든 시작할 수 있고, 중간에 그만둬도 입력한 만큼 저장됩니다.</p>' +
+        '<button class="btn primary wide" data-act="audit-start">실사 시작</button></div>';
+    }
+    if (a.done) {
+      var h = '<div class="card"><h2>실사 끝</h2><p>' + a.seen + '종을 확인했고 ' + a.changed.length + '종의 수량을 고쳤습니다.</p>';
+      if (a.changed.length) h += '<ul class="log">' + a.changed.map(function (c) { return '<li><span>' + esc(c.name) + '</span><span>' + c.from + ' → ' + c.to + c.unit + '</span></li>'; }).join('') + '</ul>';
+      h += '<p class="hint">기록은 이 휴대폰에만 있습니다. 백업 파일을 저장해 두세요.</p>' +
+        '<div class="acts"><button class="btn primary" data-act="backup">백업 파일 저장</button><button class="btn" data-act="audit-close">닫기</button></div></div>';
+      return h;
+    }
+    while (a.i < a.ids.length && !findTea(a.ids[a.i])) a.i++;
+    if (a.i >= a.ids.length) { a.done = true; return viewAudit(); }
+    var t = findTea(a.ids[a.i]);
+    return '<div class="bar"><div style="width:' + Math.round(a.i / a.ids.length * 100) + '%"></div></div>' +
+      '<p class="count"><b>' + (a.i + 1) + '</b> / ' + a.ids.length + ' · ' + esc(t.cat) + '</p>' +
+      '<div class="card"><p class="audit-name">' + esc(t.name) + '</p>' +
+      '<p class="hint">지금 기록: ' + t.qty + t.unit + (t.memo ? ' · ' + esc(t.memo) : '') + '</p>' +
+      '<label class="field"><span>실제 수량 (' + t.unit + ')</span><input class="big" id="audit-qty" type="number" inputmode="numeric" min="0" step="1" placeholder="' + t.qty + '"></label>' +
+      '<p class="err" id="audit-err" hidden></p>' +
+      '<div class="acts"><button class="btn" data-act="audit-skip">변동 없음</button><button class="btn primary" data-act="audit-next">저장하고 다음</button></div></div>' +
+      '<button class="btn wide" data-act="audit-stop">여기서 그만하기</button>';
+  }
+  function auditStep(save) {
+    var a = ui.audit, t = findTea(a.ids[a.i]);
+    if (save) {
+      var raw = $('audit-qty').value.trim();
+      if (raw !== '') {
+        var v = parseQty(raw);
+        if (v == null) { var e = $('audit-err'); e.textContent = '0 이상의 정수로 입력하세요.'; e.hidden = false; return; }
+        var from = t.qty;
+        if (setQty(t, v, '실사 정정')) a.changed.push({ name: t.name, from: from, to: v, unit: t.unit });
+      }
+    }
+    a.seen++; a.i++;
+    if (a.i >= a.ids.length) a.done = true;
+    render();
+    var inp = $('audit-qty'); if (inp) inp.focus();
+  }
+
+  /* ---------- 설정 ---------- */
+  function manage(kind, title, ph) {
+    var h = '<div class="card"><h2>' + title + '</h2><ul class="manage">';
+    S[kind].forEach(function (v, i) {
+      h += '<li><input type="text" id="' + kind + '-' + i + '" data-kind="' + kind + '" data-i="' + i + '" maxlength="20" value="' + esc(v) + '" aria-label="' + title + ' 이름"><button class="btn" data-act="rm" data-kind="' + kind + '" data-i="' + i + '">삭제</button></li>';
+    });
+    return h + '</ul><div class="addrow"><input type="text" id="new-' + kind + '" maxlength="20" placeholder="' + ph + '"><button class="btn" data-act="addk" data-kind="' + kind + '">추가</button></div></div>';
+  }
+  function viewSet() {
+    return manage('cats', '분류', '새 분류') +
+      '<div class="card"><h2>파일</h2>' +
+      '<button class="btn wide" data-act="xlsx">엑셀 파일로 내려받기</button>' +
+      '<button class="btn wide" data-act="backup">백업 파일 저장</button>' +
+      '<label class="btn wide filebtn">백업 파일 불러오기<input type="file" id="restore-file" accept=".json,application/json"></label>' +
+      '<div id="restore-sure" hidden><p class="err" id="restore-msg"></p><div class="acts"><button class="btn danger" data-act="restore-yes">덮어쓰기</button><button class="btn" data-act="restore-no">취소</button></div></div>' +
+      '<p class="hint">엑셀 파일은 보고 보관하는 용도입니다. 휴대폰을 바꿀 때는 백업 파일을 새 기기에서 불러오세요.</p></div>' +
+      '<div class="card"><h2>기록 지우기</h2><p class="hint">차 ' + S.teas.length + '종과 변경 이력 ' + S.log.length + '건이 있습니다. 분류는 남습니다.</p>' +
+      '<div id="wipe-ask"><button class="btn danger wide" data-act="wipe-ask">' + (S.sample ? '예시 데이터 모두 지우고 시작' : '모든 차와 이력 지우기') + '</button></div>' +
+      '<div id="wipe-sure" hidden><p class="err">지우면 되돌릴 수 없습니다.</p><div class="acts"><button class="btn danger" data-act="wipe">지우기</button><button class="btn" data-act="wipe-no">취소</button></div></div></div>';
+  }
+  function renameKind(inp) {
+    var kind = inp.dataset.kind, i = Number(inp.dataset.i), old = S[kind][i], v = inp.value.trim();
+    if (!v || v === old) { inp.value = old; return; }
+    if (S[kind].indexOf(v) >= 0) { inp.value = old; toast('같은 이름이 이미 있습니다'); return; }
+    S[kind][i] = v; var f = kind === 'cats' ? 'cat' : 'loc';
+    S.teas.forEach(function (t) { if (t[f] === old) t[f] = v; });
+    if (ui.cat === old) ui.cat = v;
+    persist(); toast('이름을 바꿨습니다');
+  }
+
+  /* ---------- 파일 ---------- */
+  var dlReady = (window.claude && window.claude.use) ? window.claude.use('downloads').catch(function () { return null; }) : Promise.resolve(null);
+  function saveFile(filename, data, mime) {
+    dlReady.then(function (dl) {
+      if (dl) {
+        return dl.save({ filename: filename, data: data }).then(function () { toast('파일을 저장했습니다'); }, function (e) {
+          toast(e && e.code === 'declined' ? '저장을 취소했습니다' : '이 화면에서는 파일을 저장할 수 없습니다');
+        });
+      }
+      if (window.claude) { toast('이 화면에서는 파일을 저장할 수 없습니다'); return; }
+      var blob = new Blob([data], { type: mime });
+      try {
+        var file = new File([blob], filename, { type: mime });
+        if (navigator.maxTouchPoints > 0 && navigator.canShare && navigator.canShare({ files: [file] })) {
+          return navigator.share({ files: [file] }).catch(function () {});
+        }
+      } catch (e) {}
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    });
+  }
+  function exportXlsx() {
+    if (!window.XLSX) { toast('엑셀 기능을 불러오지 못했습니다. 인터넷 연결을 확인하세요'); return; }
+    var rows = [['이름', '분류', '수량', '단위', '최소 수량', '메모', '마지막 수정일']];
+    S.teas.slice().sort(function (a, b) { return S.cats.indexOf(a.cat) - S.cats.indexOf(b.cat) || a.name.localeCompare(b.name, 'ko'); })
+      .forEach(function (t) { rows.push([t.name, t.cat, t.qty, t.unit, t.min == null ? '' : t.min, t.memo, stamp(t.updated)]); });
+    var logs = [['날짜', '차', '바뀌기 전', '바뀐 뒤', '단위', '사유']];
+    S.log.forEach(function (l) { logs.push([stamp(l.t), l.name, l.from, l.to, l.unit, l.reason]); });
+    var wb = XLSX.utils.book_new();
+    var s1 = XLSX.utils.aoa_to_sheet(rows); s1['!cols'] = [{ wch: 24 }, { wch: 10 }, { wch: 8 }, { wch: 6 }, { wch: 10 }, { wch: 28 }, { wch: 18 }];
+    var s2 = XLSX.utils.aoa_to_sheet(logs); s2['!cols'] = [{ wch: 18 }, { wch: 24 }, { wch: 10 }, { wch: 10 }, { wch: 6 }, { wch: 12 }];
+    XLSX.utils.book_append_sheet(wb, s1, '재고 목록'); XLSX.utils.book_append_sheet(wb, s2, '변경 이력');
+    var buf = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    saveFile('찻집재고-' + day(Date.now()) + '.xlsx', new Blob([buf]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  }
+  function exportBackup() { saveFile('찻집재고-백업-' + day(Date.now()) + '.json', JSON.stringify(S), 'application/json'); }
+
+  /* ---------- 그리기와 이벤트 ---------- */
+  function render() {
+    ['list', 'audit', 'set'].forEach(function (k) { var b = $('tab-' + k); if (ui.tab === k) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+    $('add-tea').hidden = ui.tab !== 'list';
+    $('view').innerHTML = ui.tab === 'list' ? viewList() : ui.tab === 'audit' ? viewAudit() : viewSet();
+    if (ui.tab === 'list') { renderChips(); renderList(); }
+  }
+
+  document.addEventListener('click', function (ev) {
+    if (ev.target === $('sheet')) return closeSheet();
+    var b = ev.target.closest('[data-act]'); if (!b) return;
+    var act = b.dataset.act, id = b.dataset.id, t;
+    switch (act) {
+      case 'tab': ui.tab = b.dataset.tab; render(); window.scrollTo(0, 0); break;
+      case 'cat': ui.cat = b.dataset.cat; renderChips(); renderList(); break;
+      case 'low': ui.lowOnly = !ui.lowOnly; renderChips(); renderList(); break;
+      case 'new': sheetEdit(null); $('f-name').focus(); break;
+      case 'edit': t = findTea(id); if (t) sheetEdit(t); break;
+      case 'adj': t = findTea(id); if (t) sheetAdjust(t); break;
+      case 'close': closeSheet(); break;
+      case 'step': { var inp = $('adj-qty'), cur = parseQty(inp.value); inp.value = Math.max(0, (cur == null ? 0 : cur) + Number(b.dataset.step)); break; }
+      case 'adj-save': {
+        t = findTea(id); if (!t) { closeSheet(); break; }
+        var v = parseQty($('adj-qty').value);
+        if (v == null) { var e = $('adj-err'); e.textContent = '0 이상의 정수로 입력하세요.'; e.hidden = false; break; }
+        var r = document.querySelector('input[name="adj-reason"]:checked');
+        var changed = setQty(t, v, r ? r.value : (v < t.qty ? '사용' : '입고'));
+        closeSheet(); render(); toast(changed ? t.name + ' ' + v + t.unit + '로 고쳤습니다' : '수량이 그대로입니다'); break;
+      }
+      case 'save': saveTea(id || ''); break;
+      case 'del-ask': $('del-ask').hidden = true; $('del-sure').hidden = false; break;
+      case 'del-no': $('del-ask').hidden = false; $('del-sure').hidden = true; break;
+      case 'del': t = findTea(id); S.teas = S.teas.filter(function (x) { return x.id !== id; }); persist(); closeSheet(); render(); if (t) toast(t.name + ' 삭제했습니다'); break;
+      case 'audit-start': ui.audit = { ids: auditOrder(), i: 0, seen: 0, changed: [], done: false }; render(); $('audit-qty').focus(); break;
+      case 'audit-next': auditStep(true); break;
+      case 'audit-skip': auditStep(false); break;
+      case 'audit-stop': ui.audit.done = true; render(); break;
+      case 'audit-close': ui.audit = null; ui.tab = 'list'; render(); break;
+      case 'addk': {
+        var kind = b.dataset.kind, ni = $('new-' + kind), nv = ni.value.trim();
+        if (!nv) { ni.focus(); break; }
+        if (S[kind].indexOf(nv) >= 0) { toast('같은 이름이 이미 있습니다'); break; }
+        S[kind].push(nv); persist(); render(); break;
+      }
+      case 'rm': {
+        var k = b.dataset.kind, name = S[k][Number(b.dataset.i)], f = k === 'cats' ? 'cat' : 'loc';
+        var used = S.teas.filter(function (x) { return x[f] === name; }).length;
+        if (used) { toast('“' + name + '”을(를) 쓰는 차가 ' + used + '종 있어 지울 수 없습니다'); break; }
+        S[k].splice(Number(b.dataset.i), 1); if (ui.cat === name) ui.cat = ''; persist(); render(); break;
+      }
+      case 'xlsx': exportXlsx(); break;
+      case 'backup': exportBackup(); break;
+      case 'restore-yes': if (ui.pending) { S = ui.pending; ui.pending = null; ui.cat = ''; ui.audit = null; persist(); render(); toast('백업을 불러왔습니다'); } break;
+      case 'restore-no': ui.pending = null; $('restore-sure').hidden = true; break;
+      case 'wipe-ask': $('wipe-ask').hidden = true; $('wipe-sure').hidden = false; break;
+      case 'wipe-no': $('wipe-ask').hidden = false; $('wipe-sure').hidden = true; break;
+      case 'wipe': S.teas = []; S.log = []; S.sample = false; ui.audit = null; persist(); render(); toast('모두 지웠습니다'); break;
+    }
+  });
+  document.addEventListener('input', function (ev) { if (ev.target.id === 'q') { ui.q = ev.target.value; renderList(); } });
+  document.addEventListener('change', function (ev) {
+    var el = ev.target;
+    if (el.dataset && el.dataset.kind && el.dataset.i != null) return renameKind(el);
+    if (el.id === 'restore-file' && el.files && el.files[0]) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var o = null; try { o = JSON.parse(fr.result); } catch (e) {}
+        el.value = '';
+        if (!valid(o)) { toast('백업 파일이 아니거나 손상된 파일입니다'); return; }
+        ui.pending = o;
+        $('restore-msg').textContent = '백업에 차 ' + o.teas.length + '종이 있습니다. 지금 기록 ' + S.teas.length + '종을 덮어씁니다.';
+        $('restore-sure').hidden = false;
+      };
+      fr.readAsText(el.files[0]);
+    }
+  });
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !$('sheet').hidden) return closeSheet();
+    if (ev.key !== 'Enter') return;
+    var id = ev.target.id;
+    if (id === 'audit-qty') { ev.preventDefault(); auditStep(true); }
+    else if (id === 'adj-qty') { ev.preventDefault(); var s = document.querySelector('[data-act="adj-save"]'); if (s) s.click(); }
+  });
+
+  render();
+})();
+</script>
+
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}if(navigator.storage&&navigator.storage.persist){navigator.storage.persist().catch(function(){});}</script>
+</body></html>
